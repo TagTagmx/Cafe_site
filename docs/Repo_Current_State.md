@@ -202,6 +202,12 @@ Polished reviewer-facing documentation only. `README.md` now opens with the proj
 
 No scoring logic, pipeline logic, Streamlit behavior, raw data, or processed data was changed. Screenshots were not added because Playwright is not installed and no new tooling was installed.
 
+### DOC-ONLY - Bilingual Portfolio Documentation
+
+Status: Done
+
+Updated `README.md` and `docs/Portfolio_Summary.md` to be English-first bilingual documentation. The docs now include concise Chinese explanations under the major English sections while preserving commands, paths, variable names, scoring interpretation, and limitations. No app, scoring, pipeline, raw data, or processed data changes were made.
+
 ## Current Files Of Interest
 
 - `data/manual/candidate_sites.csv`
@@ -235,11 +241,12 @@ No scoring logic, pipeline logic, Streamlit behavior, raw data, or processed dat
 
 ### Final Portfolio / Demo Review
 
-T0001 through T0022 are complete for the 徐州 MVP, 南京 validation run, dashboard city switching, and portfolio narrative. The next step is manual portfolio/demo review.
+T0001 through T0022 plus the bilingual documentation pass are complete for the 徐州 MVP, 南京 validation run, dashboard city switching, and portfolio narrative. The next step is manual portfolio/demo review.
 
 Review should confirm:
 
 - README explains the business problem, workflow, outputs, and limitations.
+- README and `docs/Portfolio_Summary.md` are readable to both English and Chinese reviewers.
 - Streamlit dashboard loads both 徐州 and 南京.
 - The competition interpretation is clear: `competitor_pressure_score` is actual intensity, while `competition_fit_score` is a positive fit score.
 - No secrets are exposed.
@@ -269,5 +276,6 @@ The roadmap keeps 南京 as a second-city validation rather than a rewrite. The 
 9. T0020 - Multi-City Selector / City Switching - Done
 10. T0021 - Final Portfolio Polish - Done
 11. T0022 - Final Portfolio Polish / Reviewer Handoff - Done
+12. DOC-ONLY - Bilingual Portfolio Documentation - Done
 
 Manual verification guidance is documented in `docs/Manual_Verification_Guide.md`.

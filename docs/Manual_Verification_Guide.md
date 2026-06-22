@@ -108,11 +108,13 @@ This guide lists manual checks for the current 徐州 MVP and the planned 南京
 ## Final Portfolio Review
 
 - Read `README.md` and confirm the project is understandable without reading the full ticket log.
+- Confirm `README.md` is English-first bilingual and still concise enough for GitHub review.
 - Confirm the opening paragraph communicates the pipeline, 高德 API collection, feature engineering, explainable scoring, Streamlit dashboard, and business interpretation.
 - Confirm the 10-second summary is clear for a GitHub/recruiter reviewer.
 - Confirm the README example result table includes both 徐州 and 南京 with score/component values.
 - Confirm the README explains shared versus city-specific setup without inventing unsupported commands.
-- Read `docs/Portfolio_Summary.md` and confirm it is accurate enough for a quick reviewer handoff.
+- Read `docs/Portfolio_Summary.md` and confirm it is accurate enough for a quick bilingual reviewer handoff.
+- Confirm commands, file paths, code blocks, and column names such as `competition_fit_score` remain untranslated.
 - Run `python -m streamlit run app/streamlit_app.py`.
 - Confirm the dashboard opens at `http://localhost:8501`.
 - Confirm the `城市` selector loads both 徐州 and 南京.

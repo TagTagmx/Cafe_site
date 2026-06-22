@@ -891,3 +891,40 @@ Make the project more immediately impressive and understandable for a GitHub or 
 - `python -m compileall app src`
 - Streamlit localhost check.
 - `.gitignore` check for `.env`, `data/raw/`, and `data/processed/`.
+
+## DOC-ONLY - Bilingual Portfolio Documentation
+
+Status: Done
+
+### Goal
+
+Make the GitHub-facing documentation bilingual so both English and Chinese reviewers can quickly understand the project.
+
+### Scope
+
+- Documentation only.
+- Do not change app code, scoring code, data pipeline code, generated datasets, or Streamlit behavior.
+- Do not commit `.env`, `data/raw/`, or `data/processed/`.
+- Do not rewrite technical meaning or scoring interpretation.
+
+### Files Touched
+
+- `README.md`
+- `docs/Portfolio_Summary.md`
+- `docs/Tickets.md`
+- `docs/Repo_Current_State.md`
+- `docs/Manual_Verification_Guide.md`
+
+### Result
+
+- Reworked `README.md` as English-first bilingual documentation with concise Chinese explanations under major sections.
+- Reworked `docs/Portfolio_Summary.md` as a bilingual reviewer handoff.
+- Preserved decision-support positioning, two-city setup, 高德 API pipeline description, scoring interpretation, 新街口 over-saturation explanation, and known limitations.
+- Kept commands, paths, code blocks, and column names unchanged.
+- Did not add screenshots or install new tooling.
+
+### Verification
+
+- `python -m compileall app src`
+- Streamlit run/localhost check.
+- `.gitignore` check for `.env`, `data/raw/`, and `data/processed/`.
