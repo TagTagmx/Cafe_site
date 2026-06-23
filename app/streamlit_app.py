@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import altair as alt
 import pandas as pd
@@ -8,6 +9,11 @@ import streamlit as st
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.cafe_agent import answer_site_question, build_site_context, suggested_questions
+
 CITY_OPTIONS = {
     "徐州": {
         "city_id": "xuzhou",
@@ -338,6 +344,23 @@ def main() -> None:
         st.markdown(f"**需求情况**  \n{interpretation['demand']}")
         st.markdown(f"**交通情况**  \n{interpretation['transit']}")
         st.markdown(f"**竞品情况**  \n{interpretation['competitor']}")
+
+        st.divider()
+        st.subheader("AI Site Analyst")
+        agent_context = build_site_context(selected, scores)
+        preset_question = st.selectbox(
+            "Agent focus",
+            suggested_questions(),
+            index=0,
+            key=f"agent_focus_{selected_city['city_id']}_{selected.get('site_id', selected_area)}",
+        )
+        custom_question = st.text_input(
+            "Ask the agent",
+            placeholder="Ask about rank, risk, missing data, or next checks",
+            key=f"agent_question_{selected_city['city_id']}_{selected.get('site_id', selected_area)}",
+        )
+        agent_question = custom_question.strip() or preset_question
+        st.markdown(answer_site_question(agent_question, agent_context))
 
     st.subheader("方法说明")
     note_cols = st.columns(2)
