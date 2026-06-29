@@ -1,153 +1,196 @@
-# Methodology
+# Cafe Site V2 Methodology / 方法说明
 
-This project ranks candidate coffee shop sites in 徐州 and 南京 using explainable POI evidence. Transparency remains more important than hidden model complexity so each score can be traced back to visible local-market signals.
+Cafe Site V2 ranks manually selected coffee-site hypotheses in 徐州 and 南京 using relational POI evidence. The method is rule-based, explainable, and designed so every score can be traced back to stored observations and deterministic site–POI relationships.
 
-## V1 And V2 Method Boundary
+本方法以 MySQL 关系型证据为基础，通过可审计的 SQL 特征和 Python 规则评分支持候选点复核。它不是机器学习预测，也不替代实地踏勘和租赁决策。
 
-- **V1:** pandas reads cleaned CSV observations, aggregates site metrics, applies the frozen transparent score, and supplies the two-city Streamlit dashboard.
-- **V2:** MySQL stores normalized entities and evidence, derives one deterministic relationship per unique site/POI pair, and exposes raw cumulative feature counts through SQL views. Python remains responsible for normalization, interactions, final scoring, and bilingual explanation labels.
+## Analytical Unit / 分析单元
 
-V2 verification compares every MySQL feature-view value with the pandas reference output. This is feature parity, not a claim that V1 and V2 use identical business features or produce identical rankings. Neither path uses machine learning or predicts revenue.
+Each analytical row is one manually defined candidate site. Candidate selection happens before POI evaluation; the project does not search an entire city for every possible storefront.
 
-V1 使用 pandas/CSV 完成聚合与评分；V2 使用 MySQL 保存关系型证据并由 SQL 生成可审计特征，再由 Python 完成评分和解释。两条路径都属于决策支持，不替代实地踏勘和租赁判断。
+Sites retain stable identifiers, city membership, coordinates, addresses, and selection notes. Scores are ranked within each city.
 
-## Candidate Unit
+## Evidence And Relational Model / 证据与关系模型
 
-Each row represents one manually defined candidate site. A site should include a name, address, district or area label, and optional notes about why it was selected.
+V2 separates source evidence from derived relationships:
 
-## Feature Groups
+- `poi_observations` stores imported keyword, radius, site, POI, and distance evidence.
+- `site_poi_relationships` is derived by grouping each unique `(site_id, poi_clean_id)` pair.
+- SQL feature views count relationships, not raw observation rows or keyword-match volume.
 
-Initial scoring will use four feature groups:
+A single POI can be close to multiple sites, and one site can have many POIs. Modeling this many-to-many relationship explicitly preserves provenance while preventing repeated searches from inflating features.
 
-1. Competitor pressure
-   - Nearby coffee shops and tea shops.
-   - Higher direct competitor density should reduce the score unless the area also shows strong demand.
+## POI Identity And Deduplication / POI 去重
 
-2. Demand signals
-   - Office buildings, shopping centers, schools, residential communities, hotels, and other foot-traffic generators.
-   - Higher demand density should increase the score.
+Canonical POI identity uses:
 
-3. Accessibility
-   - Transit stations, major roads, parking-related POIs, and commercial entrances.
-   - Better access should increase the score.
+1. 高德 POI ID when available.
+2. A deterministic fallback based on normalized name, rounded location, and city.
 
-4. Commercial maturity
-   - Food and beverage POI density, retail density, and entertainment or lifestyle POIs.
-   - A mature commercial area can indicate stronger customer flow, but may also overlap with competitor pressure.
+Repeated radius and keyword observations remain available as evidence but collapse to one relationship for each site and canonical POI. Advanced fuzzy matching and coordinate clustering are outside the current scope.
 
-## POI Keyword Buckets
+## Category Resolution / 分类冲突处理
 
-The first POI search vocabulary lives in `data/manual/poi_keywords.csv`. It is intentionally small and focused on evaluating the 7 manually selected 徐州 candidate sites rather than discovering every possible commercial area.
+Each relationship receives one resolved core category and one resolved sub-category. Core conflicts use this priority:
 
-The first version uses four buckets:
+```text
+direct_coffee
+> indirect_competitor
+> demand_anchor
+> transit
+> other / generic_commercial
+```
 
-- `direct_competitor`: coffee shops and major coffee chains that directly compete for coffee demand.
-- `indirect_competitor`: tea drinks, bakery, dessert, and other substitute leisure-consumption formats.
-- `demand_anchor`: offices, shopping centers, universities, residential communities, and hotels that may generate coffee demand.
-- `transit`: metro, bus, parking, and high-speed rail access signals that may improve candidate reachability.
+Sub-categories preserve specific business meanings such as `office`, `commercial`, `residential`, `education`, `hotel`, `tea_drink`, `bakery`, and `convenience_store`.
 
-Keyword results should retain their source keyword and bucket metadata during collection and cleaning. A POI may appear under multiple keywords or radii, so later cleaning must deduplicate without losing the reason it was collected.
+For example, a Starbucks POI resolves to `direct_coffee` and cannot also inflate the same core feature as generic commercial activity. Original observation context remains available for diagnostics.
 
-## POI Cleaning
+## Distance Semantics / 距离语义
 
-T0006 creates `data/processed/pois_cleaned.csv` from raw snapshot files. The cleaner removes repeated POI rows caused by overlapping radii, repeated candidate areas, and multiple keyword matches.
+Standard distance features are cumulative:
 
-Deduplication rules:
+```text
+within_300m  ⊆  within_800m  ⊆  within_1500m
+```
 
-- Use 高德 `poi_id` as the primary deduplication key when present.
-- Fall back to normalized POI name plus GCJ-02 location when `poi_id` is missing.
-- Preserve source context by retaining all matched `site_ids`, `area_names`, `buckets`, `keywords`, `keyword_ids`, and `radii_m`.
-- Keep `source_row_count`, `min_distance_m`, and `max_distance_m` so later aggregation can reason about repeated observations.
+Feature names state the radius explicitly, such as:
 
-The cleaner also writes `data/processed/poi_observations_cleaned.csv`, which keeps exact `poi_clean_id`, `site_id`, `radius_m`, and `bucket` combinations. Site-level aggregation should use this observation table instead of expanding pipe-separated summary fields from `pois_cleaned.csv`.
+- `direct_coffee_within_300m`
+- `office_within_800m`
+- `transit_within_1500m`
 
-## Site Metrics Aggregation
+Nearby evidence receives more weight for store-level demand. Direct coffee and office signals use a 75% 300m / 25% 800m weighting; direct coffee at 1500m remains district context rather than a core scoring input.
 
-T0007 creates `data/processed/site_metrics.csv` with one row per candidate site.
+## SQL Feature Layer / SQL 特征层
 
-Current metrics:
+`v_site_feature_counts` exposes one row per candidate site with cumulative counts for:
 
-- Total unique POI counts at 300m, 800m, and 1500m.
-- Direct competitor counts at 300m, 800m, and 1500m.
-- Indirect competitor counts at 300m, 800m, and 1500m.
-- Demand anchor counts at 300m, 800m, and 1500m.
-- Transit counts at 300m, 800m, and 1500m.
-- Nearest direct competitor distance.
+- Direct coffee.
+- Indirect consumption support.
+- Office, commercial, residential, education, and hotel demand.
+- Transit.
+- Total POI activity.
+- Nearest direct-coffee distance.
 
-Counts are based on deduplicated POI observations for each candidate, radius, and bucket. The metrics are descriptive inputs for scoring and should not yet be interpreted as final site recommendations.
+SQL owns deterministic joins, resolved-category aggregation, cumulative counts, and diagnostics. It does not embed validation plateaus, saturation formulas, score normalization, final ranks, or explanation labels.
 
-## Coffee Site Score v2
+## Python Interaction Layer / Python 交互特征层
 
-T0011 updates `data/processed/site_scores.csv` with the v2 scoring model. It remains simple, explainable, and based only on the currently available POI metrics.
+`src/score_v2_sites.py` reads the SQL feature view and applies fixed-cap transformations. Fixed caps avoid candidate-set-relative normalization, so adding another candidate does not automatically change every existing score.
 
-Component inputs:
+### Demand Anchors
 
-- `demand_score`: weighted mix of 800m and 1500m demand anchor counts.
-- `accessibility_score`: weighted mix of 800m and 1500m transit counts.
-- `commercial_maturity_score`: weighted mix of total POI density and indirect competitor density.
-- `competitor_pressure_score`: actual competition intensity indicator. Higher values mean stronger direct-competitor crowding and/or closer nearby competitors.
-- `competition_fit_score`: positive competition calibration score used in the v2 site score. It is highest when direct competitors are moderate, lower when competitors are too few or too many.
+Demand combines normalized office, commercial, residential, education, and hotel signals:
 
-The v2 site score uses this weighted additive model:
+```text
+demand_anchor_score =
+    office_demand_score * 0.35
+  + commercial_demand_score * 0.25
+  + residential_demand_score * 0.20
+  + education_demand_score * 0.10
+  + hotel_demand_score * 0.10
+```
+
+### Coffee Validation And Competition Pressure
+
+Direct coffee has two distinct meanings:
+
+- `coffee_validation_score` rises with moderate direct-coffee presence and then plateaus.
+- `competition_pressure_score` continues increasing as direct-coffee density rises.
+
+This allows a dense cluster to show both strong category validation and high competitive pressure.
+
+### Indirect Support Gate
+
+Tea, bakery, dessert, and similar formats cannot independently prove coffee demand:
+
+```text
+effective_indirect_support_score =
+    indirect_support_score
+  * coffee_validation_score
+  / 100
+```
+
+High indirect infrastructure with weak coffee validation receives the conservative interpretation `Infrastructure-rich but coffee-weak`.
+
+### Transit-Demand Synergy
+
+Transit amplifies nearby demand rather than creating it:
+
+```text
+transit_demand_synergy_score =
+    transit_accessibility_score
+  * demand_strength
+  / 100
+```
+
+A transit-heavy location with weak office, commercial, residential, and coffee evidence should not become a strong opportunity.
+
+### Saturation And Unvalidated Demand
+
+Saturation is conditional on coffee validation:
+
+- Below the validation threshold, saturation is `low_confidence`, not automatically low.
+- Above the threshold, competition pressure is adjusted by surrounding market activity.
+- Strong market activity with weak coffee validation is flagged as unvalidated demand.
+- Low competition is never added as a positive bonus.
+
+## Final Scores / 最终评分
+
+The balanced V2 score is:
 
 ```text
 site_score =
-  demand_score * 0.40
-  + accessibility_score * 0.25
-  + commercial_maturity_score * 0.20
-  + competition_fit_score * 0.15
+    demand_anchor_score * 0.30
+  + coffee_validation_score * 0.25
+  + effective_indirect_support_score * 0.10
+  + transit_demand_synergy_score * 0.10
+  + market_activity_score * 0.10
+  - saturation_risk_score * 0.15
 ```
 
-Each component is normalized to a comparable 0-100 scale before weighting. The final v2 `site_score` is clipped to the 0-100 range.
+The scorer also produces `community_daily_score`, interaction features, scenario metadata, city-level ranks, and bilingual explanation labels. Scores are clipped to 0–100 and remain decision-support signals rather than revenue forecasts.
 
-Competition fit uses the weighted direct-competitor density from 800m and 1500m counts. The current target is a moderate density around 30 weighted direct competitors. Scores decline more quickly when competition is below the target, because very few competitors may indicate weak category validation. Scores decline more gradually above the target, because dense coffee competition may still coexist with strong demand in core commercial areas.
+## SQL/Pandas Parity / SQL 与 pandas 一致性
 
-Important interpretation: `competition_fit_score` is not "competition level". A saturated market such as 南京新街口 can have very high `competitor_pressure_score` and direct competitor counts, while receiving a low `competition_fit_score` because the positive scoring component treats over-saturation as a risk.
+The V2 verifier independently prepares the pandas reference features and compares them with MySQL `v_site_feature_counts`.
 
-The output keeps `v1_site_score`, `v1_site_rank`, and `rank_change_vs_v1` to make the calibration effect visible.
+Parity requires:
 
-## T0012 Scoring Review Decision
+- Identical site identifiers and row counts.
+- Identical cumulative feature counts.
+- Identical nearest direct-coffee distances.
+- No extra or missing feature rows.
 
-Before adding 南京, the current v2 score should be frozen for the first second-city validation run.
+The verified full trial matched every feature cell for all 15 sites. This validates deterministic migration and aggregation; it is not a claim that all business thresholds are statistically optimal.
 
-Decision:
+## Explanation Labels / 解释标签
 
-- Keep v2 component weights unchanged for 南京 first run.
-- Keep `competition_fit_score` as a positive component.
-- Do not tune the competition fit target until 南京 has produced a first full scoring output.
-- Use 南京 results to judge whether the target is too strict for denser commercial areas.
-- Keep per-city ranking as the near-term goal; do not attempt cross-city absolute comparison yet.
+Standard bilingual labels include:
 
-This keeps 南京 as a validation exercise rather than a moving-target scoring rewrite.
+- Validated coffee demand / 咖啡需求已验证
+- Strong demand, high competition / 需求强但竞争高
+- Unvalidated coffee demand / 咖啡需求未验证
+- Infrastructure-rich but coffee-weak / 消费配套强但咖啡偏弱
+- Low demand foundation / 需求基础不足
+- Transit-supported demand / 交通放大型需求
+- Oversaturated coffee cluster / 咖啡竞争过密
 
-## T0013 City Config Planning
+Labels summarize rule-based evidence and never replace the underlying feature values.
 
-The project should move toward city-aware paths gradually. The smallest useful model is:
+## Limitations / 方法边界
 
-- `city_id`: stable lowercase English id, such as `xuzhou` or `nanjing`.
-- `city_name`: Chinese display name, such as `徐州` or `南京`.
-- `amap_city`: 高德 API city hint, such as `徐州市` or `南京市`.
-- city-specific manual candidate files.
-- city-specific raw and processed outputs.
-- shared POI keyword buckets for the first 南京 pass.
+- Candidate sites are manually selected and do not represent exhaustive city coverage.
+- POI results depend on 高德 coverage, keyword design, geocoding, and candidate-point quality.
+- No rent, frontage, visibility, store size, lease term, operating cost, or actual store-performance data is included.
+- Scores support within-city prioritization, not absolute cross-city investment ranking.
+- Thresholds and caps are documented business assumptions rather than statistically trained parameters.
+- Manual review remains mandatory.
 
-Recommended future layout:
+## Historical Note
 
-```text
-data/manual/shared/poi_keywords.csv
-data/manual/xuzhou/candidate_sites.csv
-data/manual/nanjing/candidate_sites.csv
-data/raw/xuzhou/
-data/raw/nanjing/
-data/processed/xuzhou/
-data/processed/nanjing/
-```
+An earlier pandas/CSV methodology remains visible in the ticket history for migration context; V2 is the current portfolio method.
 
-For backward compatibility, current root-level 徐州 files should remain valid until city-aware code changes are explicitly implemented.
+## Future Advisory Layer
 
-## Notes
-
-- The first version should avoid hidden model complexity.
-- The score is a decision-support signal, not a final site decision.
-- Manual review remains important for rent, frontage, visibility, lease terms, and operational constraints that may not appear in POI data.
-- A future V2/MySQL advisory agent should consume verified evidence read-only, preserve feature provenance, and cite limitations. The existing V1 rules-based site analyst is separate; V2 agent integration is outside this release.
+A future V2 agent should consume verified evidence read-only, preserve feature provenance, cite limitations, and avoid autonomous database or scoring changes.

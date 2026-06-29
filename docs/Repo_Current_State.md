@@ -4,16 +4,18 @@ Last updated: 2026-06-29
 
 ## Final Project Status
 
-`jiangsu-site-rank` is complete for the current portfolio scope and exposes two explicit architectures:
+`jiangsu-site-rank` is complete for the current portfolio scope. Cafe Site V2 is the main portfolio version:
 
-- **V1:** pandas/CSV-based POI aggregation and scoring with the two-city `app/streamlit_app.py` dashboard.
-- **V2:** MySQL-backed relational storage for sites, POIs, observations, category rules, and deterministic site–POI relationships; SQL raw feature views; Python scoring; and the separate `app/v2_review_app.py` dashboard.
+- MySQL-backed relational storage for sites, POIs, observations, category rules, and deterministic site–POI relationships.
+- SQL raw feature and diagnostic views.
+- Python scoring, interactions, explanations, exports, and exact pandas parity verification.
+- `app/v2_review_app.py` as the human review layer.
 
-V1 remains available and unchanged. V2 is verified on MySQL Community Server 8.4.10 and is not a machine-learning model or an automatic leasing decision system.
+V2 is verified on MySQL Community Server 8.4.10 and is not a machine-learning model or an automatic leasing decision system. The earlier pandas/CSV implementation remains available for history and migration comparison.
 
-## Cafe Site V2 Migration
+## Completed Cafe Site V2
 
-Cafe Site V2 is the completed relational extension. It does not replace or silently alter the V1 dashboard.
+Cafe Site V2 is the completed database-backed architecture and the repository's primary GitHub-facing project.
 
 | Ticket | Status |
 | --- | --- |
@@ -36,35 +38,37 @@ V2 is explainable decision support, not machine learning or revenue prediction.
 
 ## Files Of Interest
 
-Current CSV product:
+V2 implementation:
 
-- `app/streamlit_app.py`
-- `src/`
-- `data/manual/`
-- `docs/methodology.md`
-- `docs/Manual_Verification_Guide.md`
-
-V2 planning and database implementation:
-
-- `docs/Cafe_Site_V2_Implementation_Spec.md`
-- `docs/Cafe_Site_V2_Database_Scoring_Plan.md`
-- `sql/schema.sql`
-- `sql/seed_category_rules.sql`
-- `sql/sample_fixture.sql`
-- `sql/verify_sample_fixture.sql`
-- `data/sample/v2/`
-- `src/import_v2_sample.py`
-- `sql/views.sql`
-- `sql/verify_v2_t3.sql`
-- `src/score_v2_sites.py`
+- `README.md`
+- `app/v2_review_app.py`
 - `src/prepare_v2_full_trial.py`
 - `src/load_v2_full_trial_mysql.py`
 - `src/verify_v2_full_trial_mysql.py`
-- `app/v2_review_app.py`
+- `src/score_v2_sites.py`
+- `sql/schema.sql`
+- `sql/views.sql`
+- `sql/verify_v2_t5_full_trial.sql`
+- `data/sample/v2/`
+- `docs/methodology.md`
+- `docs/Cafe_Site_V2_Implementation_Spec.md`
+- `docs/Cafe_Site_V2_Database_Scoring_Plan.md`
+- `sql/seed_category_rules.sql`
+- `sql/sample_fixture.sql`
+- `sql/verify_sample_fixture.sql`
+- `src/import_v2_sample.py`
+- `sql/verify_v2_t3.sql`
 - `data/sample/v2/site_feature_counts.csv`
 - `docs/V2_T4_Verification_Guide.md`
+- `docs/V2_T5_MySQL_Verification_Guide.md`
 - `sql/v2_t4_manual_review.sql`
 - `sql/README.md`
+
+Historical compatibility path:
+
+- `app/streamlit_app.py`
+- Legacy collection, cleaning, aggregation, and score scripts under `src/`
+- Existing ignored/generated CSV artifacts under `data/raw/` and `data/processed/`
 
 ## MySQL Runtime Verification
 

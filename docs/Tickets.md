@@ -1,8 +1,8 @@
 # jiangsu-site-rank Tickets
 
-The completed portfolio covers a CSV-based coffee-site workflow and Streamlit dashboard for 徐州 and 南京. Manually selected candidate sites come first; 高德 Web 服务 API data evaluates those sites rather than crawling entire cities.
+The completed portfolio version is Cafe Site V2: a MySQL-backed relational POI workflow for 徐州 and 南京 with deterministic migration, SQL feature views, Python scoring, parity verification, and Streamlit review. Manually selected candidate sites come first; 高德 Web 服务 API data evaluates those sites rather than crawling entire cities.
 
-The existing CSV pipeline and two-city dashboard are complete and remain the V1 compatibility path. Cafe Site V2 is the completed MySQL-backed relational path.
+The earlier pandas/CSV pipeline remains as historical context and a migration-comparison path.
 
 Project principles:
 
@@ -12,14 +12,14 @@ Project principles:
 - Keep all coordinates in 高德 / GCJ-02.
 - Save Chinese CSV files as UTF-8 with BOM for Microsoft Excel compatibility.
 - Keep each ticket small enough to implement and verify manually.
-- Preserve the working CSV/Streamlit portfolio while V2 components are independently verified.
+- Preserve historical outputs while V2 components are independently verified.
 - Do not add machine learning, revenue prediction, cloud deployment, Docker, or agent integration to V2.
 
 Current status:
 
-- The original 徐州 MVP and 南京 second-city validation are complete.
-- V1 remains the working pandas/CSV scoring dashboard.
-- V2 is the completed MySQL relational workflow with a separate review dashboard.
+- V2 is the completed main portfolio version and MySQL relational workflow.
+- The 徐州 and 南京 full trial is complete.
+- The earlier pandas/CSV dashboard remains available for historical comparison.
 - V2 Tickets 2 through 5 are verified on MySQL Community Server 8.4.10.
 - V2-T6 closes the V2 documentation and portfolio handoff.
 - The detailed V2 contract is in `docs/Cafe_Site_V2_Implementation_Spec.md`.
@@ -83,10 +83,10 @@ Status: Done
 
 #### Result
 
-- Clarified V1 as the pandas/CSV POI scoring dashboard and V2 as the MySQL relational site–POI workflow.
+- Reframed GitHub-facing documentation around V2 as the main MySQL relational site–POI workflow.
 - Documented the verified MySQL 8.4 load, verification, scoring, and V2 review commands.
 - Summarized the relational tables, deterministic site–POI layer, FK checks, and exact SQL/pandas feature parity.
-- Preserved the V1 workflow, V2 scoring logic, and generated data outputs unchanged.
+- Preserved historical implementation, V2 scoring logic, and generated data outputs unchanged.
 - Defined V2 as complete for the current portfolio scope.
 - Recorded the AI advisory layer as an optional future phase, not a V2 deliverable.
 
