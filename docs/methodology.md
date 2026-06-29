@@ -1,6 +1,15 @@
 # Methodology
 
-This project ranks candidate coffee shop sites in 徐州 using a simple, explainable scoring model. The first version favors transparency over sophistication so each score can be traced back to visible local-market signals.
+This project ranks candidate coffee shop sites in 徐州 and 南京 using explainable POI evidence. Transparency remains more important than hidden model complexity so each score can be traced back to visible local-market signals.
+
+## V1 And V2 Method Boundary
+
+- **V1:** pandas reads cleaned CSV observations, aggregates site metrics, applies the frozen transparent score, and supplies the two-city Streamlit dashboard.
+- **V2:** MySQL stores normalized entities and evidence, derives one deterministic relationship per unique site/POI pair, and exposes raw cumulative feature counts through SQL views. Python remains responsible for normalization, interactions, final scoring, and bilingual explanation labels.
+
+V2 verification compares every MySQL feature-view value with the pandas reference output. This is feature parity, not a claim that V1 and V2 use identical business features or produce identical rankings. Neither path uses machine learning or predicts revenue.
+
+V1 使用 pandas/CSV 完成聚合与评分；V2 使用 MySQL 保存关系型证据并由 SQL 生成可审计特征，再由 Python 完成评分和解释。两条路径都属于决策支持，不替代实地踏勘和租赁判断。
 
 ## Candidate Unit
 
@@ -141,3 +150,4 @@ For backward compatibility, current root-level 徐州 files should remain valid 
 - The first version should avoid hidden model complexity.
 - The score is a decision-support signal, not a final site decision.
 - Manual review remains important for rent, frontage, visibility, lease terms, and operational constraints that may not appear in POI data.
+- A future V2/MySQL advisory agent should consume verified evidence read-only, preserve feature provenance, and cite limitations. The existing V1 rules-based site analyst is separate; V2 agent integration is outside this release.

@@ -35,10 +35,10 @@ KEY_METRICS = [
 ]
 
 QUESTION_PRESETS = [
-    "Why is this site ranked this way?",
-    "What are the biggest risks?",
-    "What data is missing before making a decision?",
-    "What should I check on-site next?",
+    "为什么这个点位是这个排名？",
+    "最大的风险是什么？",
+    "做决策前还缺哪些数据？",
+    "下一步实地应该检查什么？",
 ]
 
 
@@ -79,18 +79,18 @@ def _get_first(context: dict[str, Any], *keys: str) -> Any:
 def _level(value: Any, high: float, medium: float, reverse: bool = False) -> str:
     numeric = _number(value)
     if numeric is None:
-        return "unknown"
+        return "未知"
     if reverse:
         if numeric <= medium:
-            return "low"
+            return "低"
         if numeric <= high:
-            return "moderate"
-        return "high"
+            return "中等"
+        return "高"
     if numeric >= high:
-        return "strong"
+        return "强"
     if numeric >= medium:
-        return "moderate"
-    return "weak"
+        return "中等"
+    return "弱"
 
 
 def build_site_context(selected_row: pd.Series, ranking_df: pd.DataFrame | None = None) -> dict[str, Any]:
@@ -154,20 +154,20 @@ def suggested_questions() -> list[str]:
 
 def explain_site(site_context: dict[str, Any]) -> str:
     lines = [
-        "### AI Site Analyst",
+        "### AI 点位分析师",
         "",
         _site_snapshot(site_context),
         "",
-        "#### Main read",
+        "#### 综合判断",
         _main_read(site_context),
         "",
-        "#### Score drivers",
+        "#### 分数驱动因素",
         *_score_driver_lines(site_context),
         "",
-        "#### Risk flags",
+        "#### 风险提示",
         *_risk_lines(site_context),
         "",
-        "#### Recommendation",
+        "#### 建议",
         _recommendation(site_context),
     ]
     return "\n".join(lines)
@@ -180,19 +180,19 @@ def answer_site_question(question: str, site_context: dict[str, Any]) -> str:
     if not question_text:
         return explain_site(site_context)
 
-    if any(keyword in question_lower for keyword in ["risk", "competitor", "competition", "saturation"]):
-        return "\n".join(["### Risk Review", "", *_risk_lines(site_context), "", _recommendation(site_context)])
+    if any(keyword in question_lower for keyword in ["risk", "competitor", "competition", "saturation", "风险", "竞品", "竞争", "饱和"]):
+        return "\n".join(["### 风险复核", "", *_risk_lines(site_context), "", _recommendation(site_context)])
 
-    if any(keyword in question_lower for keyword in ["missing", "data", "limitation", "need"]):
+    if any(keyword in question_lower for keyword in ["missing", "data", "limitation", "need", "缺", "数据", "限制", "还需要"]):
         return _missing_data_answer()
 
-    if any(keyword in question_lower for keyword in ["next", "check", "visit", "on-site", "onsite", "action"]):
+    if any(keyword in question_lower for keyword in ["next", "check", "visit", "on-site", "onsite", "action", "下一步", "检查", "实地", "行动"]):
         return _next_checks_answer(site_context)
 
-    if any(keyword in question_lower for keyword in ["why", "rank", "score", "driver", "because"]):
+    if any(keyword in question_lower for keyword in ["why", "rank", "score", "driver", "because", "为什么", "排名", "分数", "原因"]):
         return "\n".join(
             [
-                "### Score Explanation",
+                "### 分数解释",
                 "",
                 _site_snapshot(site_context),
                 "",
@@ -212,13 +212,13 @@ def _site_snapshot(context: dict[str, Any]) -> str:
     total = _safe_value(context.get("candidate_count"))
     score = _format_number(context.get("site_score"))
 
-    rank_text = f"Rank {rank}"
+    rank_text = f"排名第 {rank}"
     if total != "N/A":
-        rank_text = f"{rank_text} of {total}"
+        rank_text = f"{rank_text} / 共 {total} 个候选点"
 
-    parts = [f"**Site:** {name}", f"**{rank_text}**", f"**Score:** {score}"]
+    parts = [f"**点位：** {name}", f"**{rank_text}**", f"**总分：** {score}"]
     if district != "N/A":
-        parts.insert(1, f"**District:** {district}")
+        parts.insert(1, f"**区县：** {district}")
     return "  \n".join(parts)
 
 
@@ -230,33 +230,32 @@ def _main_read(context: dict[str, Any]) -> str:
     fit = _level(context.get("competition_fit_score"), 65, 35)
 
     return (
-        f"This location has {demand} demand signals, {access} accessibility, "
-        f"and {maturity} commercial maturity. Competition pressure is {pressure}, "
-        f"while competition fit is {fit}. Treat the result as a prioritization signal "
-        "for field validation, not as a lease decision."
+        f"这个点位的需求信号为{demand}，交通可达性为{access}，商业成熟度为{maturity}。"
+        f"实际竞争压力为{pressure}，竞争适配表现为{fit}。"
+        "这个结果适合用来确定实地复核优先级，不应直接等同于租铺决策。"
     )
 
 
 def _score_driver_lines(context: dict[str, Any]) -> list[str]:
     lines = []
     component_labels = {
-        "demand_score": "Demand",
-        "accessibility_score": "Accessibility",
-        "commercial_maturity_score": "Commercial maturity",
-        "competition_fit_score": "Competition fit",
+        "demand_score": "需求强度",
+        "accessibility_score": "交通可达性",
+        "commercial_maturity_score": "商业成熟度",
+        "competition_fit_score": "竞争适配分",
     }
 
     for column, label in component_labels.items():
         if column in context:
-            lines.append(f"- **{label}:** {_format_number(context[column])}")
+            lines.append(f"- **{label}：** {_format_number(context[column])}")
 
     if "score_gap_to_best" in context:
-        lines.append(f"- **Gap to best site:** {_format_number(context['score_gap_to_best'])} points")
+        lines.append(f"- **与最高分点位差距：** {_format_number(context['score_gap_to_best'])} 分")
     if "score_gap_to_median" in context:
-        lines.append(f"- **Gap to city median:** {_format_number(context['score_gap_to_median'])} points")
+        lines.append(f"- **高于/低于本城中位数：** {_format_number(context['score_gap_to_median'])} 分")
 
     if not lines:
-        lines.append("- Score component columns were not available for this selected row.")
+        lines.append("- 当前行缺少分项得分列，无法拆解主要驱动因素。")
     return lines
 
 
@@ -272,30 +271,30 @@ def _risk_lines(context: dict[str, Any]) -> list[str]:
 
     if pressure is not None and pressure >= 75:
         lines.append(
-            f"- **High competitive pressure:** pressure score is {_format_number(pressure)}, so nearby direct competition may be crowded."
+            f"- **竞争压力较高：** 竞争压力分为 {_format_number(pressure)}，周边直接竞品可能较拥挤。"
         )
     elif pressure is not None:
-        lines.append(f"- **Competition pressure:** {_format_number(pressure)}. This is not the same as competition fit.")
+        lines.append(f"- **竞争压力：** {_format_number(pressure)}。注意它和竞争适配分不是同一个指标。")
 
     if fit is not None and fit < 30:
         lines.append(
-            f"- **Poor competition fit:** fit score is {_format_number(fit)}, which can indicate too little validation or too much saturation."
+            f"- **竞争适配偏低：** 适配分为 {_format_number(fit)}，可能表示需求未被竞品验证，也可能表示竞争过度饱和。"
         )
 
     if direct_300 is not None and direct_300 > 0:
-        lines.append(f"- **Close competitors:** {int(direct_300)} direct competitor(s) within 300m.")
+        lines.append(f"- **近距离竞品：** 300m 内有 {int(direct_300)} 个直接竞品。")
     elif nearest is not None:
-        lines.append(f"- **Nearest direct competitor:** {_format_number(nearest, decimals=0, suffix=' m')} away.")
+        lines.append(f"- **最近直接竞品：** 距离约 {_format_number(nearest, decimals=0, suffix=' m')}。")
 
     if direct_800 is not None or direct_1500 is not None:
         lines.append(
-            "- **Competitor count:** "
-            f"{_format_number(direct_800, decimals=0)} within 800m and "
-            f"{_format_number(direct_1500, decimals=0)} within 1500m."
+            "- **竞品数量：** "
+            f"800m 内 {_format_number(direct_800, decimals=0)} 个，"
+            f"1500m 内 {_format_number(direct_1500, decimals=0)} 个。"
         )
 
     if not lines:
-        lines.append("- Direct competition metrics were not available, so saturation risk needs manual review.")
+        lines.append("- 当前缺少直接竞品指标，饱和风险需要人工实地复核。")
 
     return lines
 
@@ -306,33 +305,33 @@ def _recommendation(context: dict[str, Any]) -> str:
     demand = _number(context.get("demand_score"))
 
     if score is not None and score >= 80 and (pressure is None or pressure < 90):
-        return "Shortlist this site for fieldwork. Validate rent, frontage, pedestrian flow, and whether nearby competitors are serving the same customer segment."
+        return "建议把该点位放入实地复核短名单。下一步重点核验租金、门头可见性、实际人流，以及周边竞品是否服务同一客群。"
 
     if demand is not None and demand >= 75 and pressure is not None and pressure >= 90:
-        return "Keep this site as a high-demand but high-saturation candidate. It needs stronger differentiation or better unit economics before moving forward."
+        return "该点位属于高需求但高饱和候选点。继续推进前，需要确认品牌差异化、租金承受能力和单店模型是否足够强。"
 
-    return "Do not make a final decision from the model alone. Use this site as a comparison point and verify the missing operating data before prioritizing it."
+    return "不要只根据模型做最终决策。建议把它作为对比点位，并先补齐关键经营数据后再决定优先级。"
 
 
 def _missing_data_answer() -> str:
     return (
-        "### Missing Data / Limitations\n\n"
-        "- Rent, deposit, lease term, and renovation constraints are not included.\n"
-        "- Store size, frontage, visibility, corner access, and floor position are not included.\n"
-        "- Real pedestrian counts, daypart flow, and customer spending power are not included.\n"
-        "- Brand fit, menu positioning, delivery radius, and cannibalization are not modeled.\n"
-        "- POI data can miss newly opened or recently closed stores.\n\n"
-        "The current model is useful for narrowing the shortlist, but it should be paired with fieldwork and unit economics."
+        "### 缺失数据 / 使用边界\n\n"
+        "- 当前未纳入租金、押金、租期、转让费和装修限制。\n"
+        "- 当前未纳入铺位面积、门头宽度、可见性、拐角位置和楼层位置。\n"
+        "- 当前未纳入真实人流、分时段客流和周边消费能力。\n"
+        "- 当前未建模品牌定位、菜单价格带、外卖半径和同品牌 cannibalization 风险。\n"
+        "- POI 数据可能遗漏新开或刚关闭的门店。\n\n"
+        "因此，当前模型适合缩小候选范围，但必须结合实地踏勘和单店经济模型一起判断。"
     )
 
 
 def _next_checks_answer(context: dict[str, Any]) -> str:
     site = _safe_value(_get_first(context, "area_name", "name", "site_name"))
     return (
-        f"### On-Site Checks For {site}\n\n"
-        "1. Count pedestrian flow in morning, lunch, afternoon, and evening periods.\n"
-        "2. Record visible competitors within a 5 to 10 minute walk and note their price bands.\n"
-        "3. Check storefront visibility from the main walking path and transit exits.\n"
-        "4. Ask for rent, usable area, lease term, transfer fee, and renovation restrictions.\n"
-        "5. Compare the site against the next two ranked candidates before making a shortlist decision."
+        f"### {site} 的实地检查清单\n\n"
+        "1. 分别在早高峰、午间、下午和晚间记录实际人流。\n"
+        "2. 步行 5 到 10 分钟范围内记录可见竞品，并标注价格带和客群。\n"
+        "3. 检查门头从主步行动线、地铁口或公交站是否容易被看到。\n"
+        "4. 询问租金、可用面积、租期、转让费和装修限制。\n"
+        "5. 与当前排名相邻的两个候选点做横向对比后，再决定是否进入短名单。"
     )

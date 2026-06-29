@@ -2,9 +2,9 @@
 
 ## Project / 项目
 
-`jiangsu-site-rank` is a China-local retail site-selection analytics case study. It evaluates coffee shop candidate sites / 咖啡店候选点 in 徐州 and 南京 using manually selected business hypotheses, 高德 Web 服务 API geocoding, nearby POI snapshots, feature engineering / 特征工程, explainable scoring / 可解释评分, and a Streamlit dashboard with business interpretation.
+`jiangsu-site-rank` is a China-local retail site-selection analytics case study. V1 evaluates 徐州 and 南京 candidate sites through a pandas/CSV scoring dashboard. V2 adds a verified MySQL relational site–POI model, SQL feature views, deterministic migration checks, Python scoring, and a separate Streamlit review dashboard.
 
-本项目是中国本地零售选址分析案例。它围绕徐州和南京的咖啡店候选点，构建从人工候选点、高德 POI 采集、特征工程、评分到仪表盘解读的完整决策支持流程。
+本项目是中国本地零售选址分析案例。V1 提供 pandas/CSV 双城市评分仪表盘；V2 增加经过 MySQL 8.4 验证的关系型候选点–POI 数据模型、SQL 特征层和独立复核仪表盘。
 
 ## Business Question / 业务问题
 
@@ -20,7 +20,9 @@ The project does not try to identify every possible location in a city. It ranks
 
 - 徐州 MVP: 7 candidate sites scored and displayed in the dashboard.
 - 南京 validation run: 8 candidate sites scored using the frozen v2 model.
-- Dashboard: one Streamlit app with a sidebar `城市` selector for 徐州 and 南京.
+- V1 dashboard: one Streamlit app with a sidebar `城市` selector for 徐州 and 南京.
+- V2: 15 sites, 6,866 canonical POIs, and 8,661 unique site–POI relationships loaded and verified on MySQL 8.4.
+- Verification: FK and semantic checks passed; all SQL feature values matched pandas exactly.
 
 当前已完成徐州 MVP、南京第二城市验证，以及一个可切换城市的 Streamlit 仪表盘。
 
@@ -62,3 +64,4 @@ README 的目标是在约 10 秒内让 GitHub/recruiter 评审理解：这是一
 - The score is transparent enough to challenge / 评分足够透明，可以被质疑和复核。
 - Limitations are visible rather than hidden / 限制条件没有被隐藏。
 - The dashboard supports within-city comparison, not absolute cross-city investment ranking / 仪表盘支持城市内比较，不宣称跨城市绝对投资排序。
+- V2 provides an auditable foundation for a future MySQL-connected AI advisory agent; the existing local V1 rules-based analyst is separate / V2 为未来连接 MySQL 的 AI 顾问层提供可审计基础，现有 V1 本地规则分析器与其分离。

@@ -1,6 +1,8 @@
 # jiangsu-site-rank Tickets
 
-This roadmap keeps the MVP small and centered on 徐州 coffee shop site selection. Manually selected candidate sites come first; 高德 Web 服务 API data is used to evaluate those sites, not to crawl entire cities.
+The completed portfolio covers a CSV-based coffee-site workflow and Streamlit dashboard for 徐州 and 南京. Manually selected candidate sites come first; 高德 Web 服务 API data evaluates those sites rather than crawling entire cities.
+
+The existing CSV pipeline and two-city dashboard are complete and remain the V1 compatibility path. Cafe Site V2 is the completed MySQL-backed relational path.
 
 Project principles:
 
@@ -10,15 +12,87 @@ Project principles:
 - Keep all coordinates in 高德 / GCJ-02.
 - Save Chinese CSV files as UTF-8 with BOM for Microsoft Excel compatibility.
 - Keep each ticket small enough to implement and verify manually.
-- Do not add 南京 yet.
-- Do not overbuild AI reports, automation, or multi-city comparison before the 徐州 pipeline and dashboard work.
+- Preserve the working CSV/Streamlit portfolio while V2 components are independently verified.
+- Do not add machine learning, revenue prediction, cloud deployment, Docker, or agent integration to V2.
 
-Current expansion planning:
+Current status:
 
-- 徐州 MVP is complete through T0011.
-- 南京 is the next city, but it should be treated as a second-city validation of the existing BI workflow.
-- Detailed staged roadmap: `docs/planning/Multi_City_Roadmap_Xuzhou_To_Nanjing.md`.
+- The original 徐州 MVP and 南京 second-city validation are complete.
+- V1 remains the working pandas/CSV scoring dashboard.
+- V2 is the completed MySQL relational workflow with a separate review dashboard.
+- V2 Tickets 2 through 5 are verified on MySQL Community Server 8.4.10.
+- V2-T6 closes the V2 documentation and portfolio handoff.
+- The detailed V2 contract is in `docs/Cafe_Site_V2_Implementation_Spec.md`.
 - Manual checks: `docs/Manual_Verification_Guide.md`.
+
+## Cafe Site V2 Tickets
+
+| Ticket | Status |
+| --- | --- |
+| V2-T1 Documentation and scoring contract | Done |
+| V2-T2 MySQL schema, category rules, and sample fixture | Done |
+| V2-T3 Reproducible import and SQL feature views | Done |
+| V2-T4 Python interaction scoring and explanations | Done |
+| V2-T5 Streamlit V2 review mode and full-data migration trial | Done |
+| V2-T6 Final V2 wrap-up and portfolio documentation | Done |
+
+V2-T4 adds `src/score_v2_sites.py`, an offline feature-view fixture, deterministic scoring/export tests, and `docs/V2_T4_Verification_Guide.md`. Its MySQL-backed path was subsequently verified by V2-T5.
+
+### V2-T5 - Streamlit V2 Review Mode And Full-Data Migration Trial
+
+Status: Done
+
+#### Implemented
+
+- Added `app/v2_review_app.py` as a separate review entrypoint, leaving the current CSV dashboard unchanged.
+- Added base evidence, normalized components, interactions, scenario scores, bilingual explanations, and legacy rank/score comparison columns.
+- Added `src/prepare_v2_full_trial.py` to derive auditable full-data feature counts from the current 徐州 and 南京 processed artifacts.
+- The dry trial applies deterministic category priority and counts one relationship per unique site/POI pair instead of keyword-match volume.
+- Local result: 15 sites and 8,661 unique relationships from 16,127 cleaned observation rows; 7,466 repeated rows were collapsed.
+- V2 ranks restart within each city so city review does not show mixed cross-city ranks.
+- Added `src/load_v2_full_trial_mysql.py` for deterministic database creation/reset, batched full-trial loading, relationship derivation, and view creation.
+- Added `src/verify_v2_full_trial_mysql.py` for exact row-count, integrity, and pandas/MySQL feature-parity checks.
+- Added `sql/reset_v2.sql`, `sql/verify_v2_t5_full_trial.sql`, and `docs/V2_T5_MySQL_Verification_Guide.md`.
+- Offline loader preparation produces 2 cities, 15 sites, 6,866 POIs, 19 keywords, 19 rules, and 17,341 expanded observations.
+
+#### Verification
+
+- All 21 unit/fixture tests pass.
+- `python -m compileall app src` passes.
+- Full-data dry trial and offline V2 scoring exports complete successfully.
+- `python src/load_v2_full_trial_mysql.py --validate-only` passes.
+- MySQL Community Server 8.4.10 was verified at `127.0.0.1:3307`.
+- The committed CSV fixture loaded into a separate database: 38 observations produced 33 unique relationships, and all six `sql/verify_v2_t3.sql` checks passed.
+- `python src/load_v2_full_trial_mysql.py --create-database --reset` successfully rebuilt and loaded the dedicated `cafe_site_v2` database.
+- Verified full-trial counts: 2 cities, 15 candidate sites, 6,866 POIs, 19 keywords, 19 category rules, 17,341 expanded observations, and 8,661 unique site/POI relationships.
+- Foreign-key, city/site, radius/distance, distance-band, category-resolution, and unique-relationship checks passed.
+- All 15 named checks in `sql/verify_v2_t5_full_trial.sql` passed.
+- Every MySQL `v_site_feature_counts` identifier, cumulative count, and nearest-coffee distance matched the pandas `build_full_trial()` output exactly.
+- MySQL-backed scoring wrote all 15 site outputs successfully without scoring-weight changes.
+- 新街口 remains high-validation/high-pressure; 仙林大学城 remains the lowest-ranked 南京 site and a sparse-evidence watchpoint.
+
+Local review command:
+
+```powershell
+python -m streamlit run app/v2_review_app.py
+```
+
+### V2-T6 - Final V2 Wrap-Up And Portfolio Documentation
+
+Status: Done
+
+#### Result
+
+- Clarified V1 as the pandas/CSV POI scoring dashboard and V2 as the MySQL relational site–POI workflow.
+- Documented the verified MySQL 8.4 load, verification, scoring, and V2 review commands.
+- Summarized the relational tables, deterministic site–POI layer, FK checks, and exact SQL/pandas feature parity.
+- Preserved the V1 workflow, V2 scoring logic, and generated data outputs unchanged.
+- Defined V2 as complete for the current portfolio scope.
+- Recorded the AI advisory layer as an optional future phase, not a V2 deliverable.
+
+#### Final Status
+
+Cafe Site V2 is complete as an explainable, reproducible relational analytics foundation. Any AI advisory agent, deployment, new data source, or scoring recalibration requires a separate future ticket.
 
 ## T0001 - Project Setup
 

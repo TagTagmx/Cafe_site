@@ -346,17 +346,17 @@ def main() -> None:
         st.markdown(f"**竞品情况**  \n{interpretation['competitor']}")
 
         st.divider()
-        st.subheader("AI Site Analyst")
+        st.subheader("AI 点位分析师")
         agent_context = build_site_context(selected, scores)
         preset_question = st.selectbox(
-            "Agent focus",
+            "分析重点",
             suggested_questions(),
             index=0,
             key=f"agent_focus_{selected_city['city_id']}_{selected.get('site_id', selected_area)}",
         )
         custom_question = st.text_input(
-            "Ask the agent",
-            placeholder="Ask about rank, risk, missing data, or next checks",
+            "向 AI 提问",
+            placeholder="可以询问排名、风险、缺失数据或下一步实地检查",
             key=f"agent_question_{selected_city['city_id']}_{selected.get('site_id', selected_area)}",
         )
         agent_question = custom_question.strip() or preset_question

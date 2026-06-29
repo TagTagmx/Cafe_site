@@ -1,6 +1,6 @@
 # Manual Verification Guide
 
-This guide lists manual checks for the current 徐州 MVP and the planned 南京 expansion. It is intentionally practical and should stay aligned with `docs/Tickets.md`.
+This guide lists manual checks for the completed V1 two-city dashboard and V2 MySQL workflow. It is intentionally practical and stays aligned with `docs/Tickets.md`.
 
 ## Current 徐州 MVP Checks
 
@@ -105,6 +105,26 @@ This guide lists manual checks for the current 徐州 MVP and the planned 南京
 - Scores look counterintuitive: review demand, transit, commercial maturity, and competition fit separately before changing weights.
 - Dashboard errors on missing columns: verify `site_scores.csv` preserves `site_metrics.csv` columns.
 
+## V2 MySQL 8.4 Verification
+
+Configure a dedicated local database through the `MYSQL_*` values in `.env`. The load command resets the V2 schema, so review `docs/V2_T5_MySQL_Verification_Guide.md` first.
+
+```powershell
+python src/load_v2_full_trial_mysql.py --create-database --reset
+python src/verify_v2_full_trial_mysql.py
+python src/score_v2_sites.py --output-dir data/exports/v2/full_trial/mysql_scored
+python -m streamlit run app/v2_review_app.py
+```
+
+Confirm:
+
+- The load summary reports 2 cities, 15 sites, 6,866 POIs, 17,341 observations, and 8,661 unique relationships.
+- Foreign-key, city/site, radius/distance, distance-band, category-resolution, and uniqueness checks pass.
+- All 15 named SQL checks pass.
+- Every MySQL feature identifier and value matches the pandas reference.
+- Scoring writes 15 site outputs without changing scoring weights.
+- The V2 dashboard displays base evidence, interactions, scenario scores, bilingual explanations, and legacy comparison fields.
+
 ## Final Portfolio Review
 
 - Read `README.md` and confirm the project is understandable without reading the full ticket log.
@@ -121,5 +141,8 @@ This guide lists manual checks for the current 徐州 MVP and the planned 南京
 - Confirm 新街口 is interpreted as high actual competition pressure with over-saturation risk, not low competition.
 - Confirm known limitations remain visible, especially missing rent, lease, frontage, visibility, and operating-cost data.
 - Confirm the 南京仙林大学城 sparse-POI watchpoint remains visible.
+- Confirm README clearly separates the V1 pandas/CSV architecture from the V2 MySQL relational architecture.
+- Confirm V2-T5 and the final V2 wrap-up ticket are marked Done.
+- Confirm the V2/MySQL AI advisory layer is described only as optional future work; do not confuse it with the existing local V1 rules-based analyst.
 - Confirm `.env` is not shared or committed.
 - Optional: add screenshots manually if needed for a portfolio page or external presentation.
